@@ -1,4 +1,4 @@
-﻿using DatingApp.Data;
+using DatingApp.Data;
 using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Mvc;
@@ -40,7 +40,6 @@ namespace DatingApp
 
           //  app.UseHttpsRedirection();
             app.UseCors(x => x.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader());
-            app.UseMvc();
         }
     }
 }
