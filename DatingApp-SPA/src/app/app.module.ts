@@ -39,7 +39,7 @@ import { AuthGuard } from './_guards/auth.guard';
    providers: [
       AuthService,
       ErrorInterceptorProvider,
-      AlertifyService,AuthGuard
+      AlertifyService, AuthGuard
    ],
    bootstrap: [
       AppComponent
