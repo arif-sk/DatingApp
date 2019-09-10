@@ -18,7 +18,7 @@ using Microsoft.Extensions.Options;
 namespace DatingApp_API.Controllers
 {
     [Authorize]
-    [Route("api/users/{userId/photos}")]
+    [Route("api/users/{userId}/photos")]
     [ApiController]
     public class PhotosController : ControllerBase
     {
@@ -28,7 +28,7 @@ namespace DatingApp_API.Controllers
         private Cloudinary _cloudnary;
 
         public PhotosController(IDatingRepository datingRepository,
-            IMapper mapper,IOptions<CloudinarySettings> cloudinaryConfig)
+            IMapper mapper, IOptions<CloudinarySettings> cloudinaryConfig)
         {
             _datingRepository = datingRepository;
             _mapper = mapper;
@@ -41,9 +41,16 @@ namespace DatingApp_API.Controllers
             );
             _cloudnary = new Cloudinary(acc);
         }
+        [HttpGet("{id}",Name = "GetPhoto")]
+        public async Task<IActionResult> GetPhoto(int id)
+        {
+            var photoFromRepo = await _datingRepository.GetPhoto(id);
+            var photo = _mapper.Map<PhotoForReturnDto>(photoFromRepo);
+            return Ok(photo);
+        }
         [HttpPost]
         public async Task<IActionResult> AddPhotoForUser(int userId,
-            PhotoForCreationDto photoForCreationDto)
+            [FromForm] PhotoForCreationDto photoForCreationDto)
         {
             if (userId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
             {
@@ -68,7 +75,15 @@ namespace DatingApp_API.Controllers
             photoForCreationDto.PublicId = uploadResult.PublicId;
 
             var photo = _mapper.Map<Photo>(photoForCreationDto);
-            if(!)
+            if (!userFromRepo.Photos.Any(u => u.IsMain))
+                photo.IsMain = true;
+            userFromRepo.Photos.Add(photo);
+            if(await _datingRepository.SaveAll())
+            {
+                var photoToReturn = _mapper.Map<PhotoForReturnDto>(photo);
+                return CreatedAtRoute("GetPhoto", new { id = photo.Id },photoToReturn);
+            }
+            return BadRequest("Couldn't add the photo");
         }
     }
 }
