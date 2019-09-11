@@ -41,7 +41,7 @@ namespace DatingApp_API.Controllers
             );
             _cloudnary = new Cloudinary(acc);
         }
-        [HttpGet("{id}",Name = "GetPhoto")]
+        [HttpGet("{id}", Name = "GetPhoto")]
         public async Task<IActionResult> GetPhoto(int id)
         {
             var photoFromRepo = await _datingRepository.GetPhoto(id);
@@ -59,9 +59,9 @@ namespace DatingApp_API.Controllers
             var userFromRepo = await _datingRepository.GetUser(userId);
             var file = photoForCreationDto.File;
             var uploadResult = new ImageUploadResult();
-            if(file.Length > 0)
+            if (file.Length > 0)
             {
-                using( var stream = file.OpenReadStream())
+                using (var stream = file.OpenReadStream())
                 {
                     var uploadParams = new ImageUploadParams()
                     {
@@ -78,12 +78,30 @@ namespace DatingApp_API.Controllers
             if (!userFromRepo.Photos.Any(u => u.IsMain))
                 photo.IsMain = true;
             userFromRepo.Photos.Add(photo);
-            if(await _datingRepository.SaveAll())
+            if (await _datingRepository.SaveAll())
             {
                 var photoToReturn = _mapper.Map<PhotoForReturnDto>(photo);
-                return CreatedAtRoute("GetPhoto", new { id = photo.Id },photoToReturn);
+                return CreatedAtRoute("GetPhoto", new { id = photo.Id }, photoToReturn);
             }
             return BadRequest("Couldn't add the photo");
+        }
+        [HttpPost("{id}/setMain")]
+        public async Task<IActionResult> SetMainPhoto(int userId, int id)
+        {
+            if (userId != int.Parse(User.FindFirst(ClaimTypes.NameIdentifier).Value))
+                return Unauthorized();
+            var user = await _datingRepository.GetUser(userId);
+            if (!user.Photos.Any(p => p.Id == id))
+                return Unauthorized();
+            var photoFromRepo = await _datingRepository.GetPhoto(id);
+            if (photoFromRepo.IsMain)
+                return BadRequest("This is already the main Photo");
+            var getCurrentMainPhoto = await _datingRepository.GetMainPhotoForUser(userId);
+            getCurrentMainPhoto.IsMain = false;
+            photoFromRepo.IsMain = true;
+            if (await _datingRepository.SaveAll())
+                return NoContent();
+            return BadRequest("Couldn't set photo to main!");
         }
     }
 }
